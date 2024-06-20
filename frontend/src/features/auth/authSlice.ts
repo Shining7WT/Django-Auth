@@ -1,6 +1,7 @@
 // src/features/auth/authSlice.ts
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { getUserInfoFromStorage } from "../../utils/localStorage";
 
 interface AuthState {
   user: null | { email: string; token: string };
@@ -9,7 +10,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: null,
+  user: getUserInfoFromStorage(),
   loading: false,
   error: null,
 };
@@ -21,7 +22,11 @@ export const loginUser = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/users/login/", { username:email, password });
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/users/login/",
+        { username: email, password }
+      );
+      localStorage.setItem("userInfo", JSON.stringify(response.data));
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue("Invalid email or password");
@@ -40,11 +45,15 @@ export const registerUser = createAsyncThunk(
     thunkAPI
   ) => {
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/users/register/", {
-        name,
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/users/register/",
+        {
+          name,
+          email,
+          password,
+        }
+      );
+
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue("Registration failed");
@@ -59,6 +68,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.error = null;
+      localStorage.removeItem("userInfo");
     },
   },
   extraReducers: (builder) => {
